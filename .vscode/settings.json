@@ -1,0 +1,20 @@
+{
+  "files.exclude": {
+    "**/.venv": true
+  },
+  "editor.tabSize": 4,
+  "python.formatting.provider": "black",
+  "python.pythonPath": "/opt/phantom/usr/bin/python",
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.enabled": true,
+  "python.analysis.extraPaths": [
+    "~/.phantom-packages"
+  ],
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+}

@@ -1,0 +1,97 @@
+{
+    "appid": "43ab9154-84fb-4de9-a717-28e93534e601",
+    "name": "HTTP Cats",
+    "description": "Translates HTTP status code to a visual representation using cat pictures",
+    "type": "information",
+    "product_vendor": "HTTP Cats",
+    "logo": "httpcats.svg",
+    "logo_dark": "httpcats_dark.svg",
+    "product_name": "HTTP Cats",
+    "python_version": "3",
+    "product_version_regex": ".*",
+    "publisher": "Vaidas",
+    "license": "Copyright (c) Vaidas, 2022",
+    "app_version": "1.0.0",
+    "utctime_updated": "2022-04-27T18:15:02.566258Z",
+    "package_name": "phantom_httpcats",
+    "main_module": "httpcats_connector.py",
+    "min_phantom_version": "5.2.1.78411",
+    "app_wizard_version": "1.0.0",
+    "configuration": {
+        "base_url": {
+            "description": "Base URL to API",
+            "data_type": "string",
+            "required": true,
+            "value_list": [],
+            "default": "https://http.cat",
+            "order": 0,
+            "name": "base_url",
+            "id": 0
+        }
+    },
+    "actions": [
+        {
+            "action": "test connectivity",
+            "identifier": "test_connectivity",
+            "description": "Validate the asset configuration for connectivity using supplied configuration",
+            "verbose": "",
+            "type": "test",
+            "read_only": true,
+            "parameters": {},
+            "output": [],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "get status",
+            "identifier": "get_status",
+            "description": "Gets visual representation of HTTP status",
+            "verbose": "Visual representation of HTTP status using cat pictures",
+            "type": "generic",
+            "read_only": true,
+            "parameters": {
+                "http_status_code": {
+                    "description": "HTTP status code",
+                    "data_type": "numeric",
+                    "required": true,
+                    "primary": true,
+                    "contains": [],
+                    "value_list": [],
+                    "default": "",
+                    "order": 0,
+                    "name": "http_status_code"
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.parameter.http_status_code",
+                    "data_type": "numeric",
+                    "contains": [],
+                    "column_name": "http_status_code",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "status",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
+            "versions": "EQ(*)"
+        }
+    ]
+}
