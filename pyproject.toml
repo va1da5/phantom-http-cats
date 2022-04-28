@@ -7,18 +7,4 @@ extend-ignore = 'E203'
 [tool.isort]
 profile = 'black'
 skip_gitignore = true
-skip='migrations'
-
-[mypy]
-python_version = '3.6'
-allow_redefinition = true
-check_untyped_defs = true
-show_error_codes = true
-warn_unused_ignores = true
-strict_optional = true
-incremental = true
-warn_redundant_casts = true
-warn_unused_configs = true
-local_partial_types = true
-show_traceback = true
-strict=true
+skip='build'

@@ -8,6 +8,7 @@
 from __future__ import print_function, unicode_literals
 
 import json
+from typing import Any, Mapping, Tuple
 
 # Phantom App imports
 import phantom.app as phantom
@@ -38,7 +39,9 @@ class HttpCatsConnector(BaseConnector):
         # modify this as you deem fit.
         self._base_url = None
 
-    def _process_empty_response(self, response, action_result):
+    def _process_empty_response(
+        self, response: requests.Response, action_result: ActionResult
+    ) -> RetVal:
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
@@ -49,7 +52,13 @@ class HttpCatsConnector(BaseConnector):
             None,
         )
 
-    def _process_html_response(self, response, action_result):
+    def _process_html_response(
+        self, response: requests.Response, action_result: ActionResult
+    ):
+
+        if "<title>HTTP Cats</title>" in response.text:
+            return RetVal(action_result.set_status(phantom.APP_SUCCESS, response.text))
+
         # An html response, treat it like an error
         status_code = response.status_code
 
@@ -59,7 +68,7 @@ class HttpCatsConnector(BaseConnector):
             split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = "\n".join(split_lines)
-        except:
+        except:  # noqa
             error_text = "Cannot parse error details"
 
         message = "Status Code: {0}. Data from server:\n{1}\n".format(
@@ -69,7 +78,9 @@ class HttpCatsConnector(BaseConnector):
         message = message.replace("{", "{{").replace("}", "}}")
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _process_json_response(self, r, action_result):
+    def _process_json_response(
+        self, r: requests.Response, action_result: ActionResult
+    ) -> RetVal:
         # Try a json parse
         try:
             resp_json = r.json()
@@ -93,7 +104,16 @@ class HttpCatsConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _process_response(self, r, action_result):
+    def _process_image_response(
+        self, r: requests.Response, action_result: ActionResult
+    ) -> Tuple[bool, bytes]:
+
+        if 200 <= r.status_code < 399:
+            return RetVal(phantom.APP_SUCCESS, r.content)
+
+    def _process_response(
+        self, r: requests.Response, action_result: ActionResult
+    ) -> RetVal:
         # store the r_text in debug data, it will get dumped in the logs if the action fails
         if hasattr(action_result, "add_debug_data"):
             action_result.add_debug_data({"r_status_code": r.status_code})
@@ -113,6 +133,9 @@ class HttpCatsConnector(BaseConnector):
         if "html" in r.headers.get("Content-Type", ""):
             return self._process_html_response(r, action_result)
 
+        if "jpeg" in r.headers.get("Content-Type", ""):
+            return self._process_image_response(r, action_result)
+
         # it's not content-type that is to be parsed, handle an empty response
         if not r.text:
             return self._process_empty_response(r, action_result)
@@ -124,7 +147,9 @@ class HttpCatsConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_rest_call(self, endpoint, action_result, method="get", **kwargs):
+    def _make_rest_call(
+        self, endpoint: str, action_result: ActionResult, method: str = "get", **kwargs
+    ):
         # **kwargs can be any additional parameters that requests.request accepts
 
         config = self.get_config()
@@ -162,7 +187,7 @@ class HttpCatsConnector(BaseConnector):
 
         return self._process_response(r, action_result)
 
-    def _handle_test_connectivity(self, param):
+    def _handle_test_connectivity(self, param: Mapping[str, Any]):
         # Add an action result object to self (BaseConnector) to represent the action for this param
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -174,23 +199,23 @@ class HttpCatsConnector(BaseConnector):
         self.save_progress("Connecting to endpoint")
         # make rest call
         ret_val, response = self._make_rest_call(
-            "/endpoint", action_result, params=None, headers=None
+            "/", action_result, params=None, headers=None
         )
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
             self.save_progress("Test Connectivity Failed.")
-            # return action_result.get_status()
+            return action_result.get_status()
 
         # Return success
-        # self.save_progress("Test Connectivity Passed")
-        # return action_result.set_status(phantom.APP_SUCCESS)
+        self.save_progress("Test Connectivity Passed")
+        return action_result.set_status(phantom.APP_SUCCESS)
 
         # For now return Error with a message, in case of success we don't set the message, but use the summary
         return action_result.set_status(phantom.APP_ERROR, "Action not yet implemented")
 
-    def _handle_get_status(self, param):
+    def _handle_get_status(self, param: Mapping[str, Any]):
         # Implement the handler here
         # use self.save_progress(...) to send progress messages back to the platform
         self.save_progress(
@@ -210,19 +235,19 @@ class HttpCatsConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            "/", action_result, params=None, headers=None
+            f"/{http_status_code}", action_result, params=None, headers=None
         )
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            # return action_result.get_status()
+            return action_result.get_status()
             pass
 
         # Now post process the data,  uncomment code as you deem fit
 
         # Add the response into the data section
-        action_result.add_data(response)
+        # action_result.add_data(response)
 
         # Add a dictionary that is made up of the most important values from data into the summary
         # summary = action_result.update_summary({})
@@ -235,7 +260,7 @@ class HttpCatsConnector(BaseConnector):
         # For now return Error with a message, in case of success we don't set the message, but use the summary
         return action_result.set_status(phantom.APP_ERROR, "Action not yet implemented")
 
-    def handle_action(self, param):
+    def handle_action(self, param: Mapping[str, Any]):
         ret_val = phantom.APP_SUCCESS
 
         # Get the action that we are supposed to execute for this App Run

@@ -27,6 +27,22 @@ done
 make prepare
 ```
 
+## Development
+
+Splunk Phantom (SOAR) application development could be done using a [community SOAR image](https://docs.splunk.com/Documentation/Phantom/4.10.7/Install/InstallOVA). Visual Studio Code has a capability to [use a remote server for development](https://code.visualstudio.com/docs/remote/ssh). Additionally, such setup supports most of the addons, such as [Pylance](https://github.com/microsoft/pylance-release). This gives a possibility to shorten the testing cycles and improve developer's morale. Because of that, most of the settings are tuned to be used within SOAR instance under user `phantom`.
+
+[`Makefile`](./Makefile) contains some useful commands to automate some of the development tasks
+
+```bash
+# prepare local environment
+make prepare
+
+# install application in Splunk SOAR
+make install
+
+#...
+```
+
 
 ## Fix SSH Connectivity Timeout Issue
 
@@ -52,3 +68,6 @@ UseDNS no
 - [Tutorial: Use the app wizard to develop an app framework](https://docs.splunk.com/Documentation/Phantom/4.10.7/DevelopApps/Tutorial)
 - [Tutorial: Use the Splunk SOAR (Cloud) app wizard to develop an app framework](https://docs.splunk.com/Documentation/SOAR/current/DevelopApps/Tutorial)
 - [A comprehensive guide to fixing slow SSH logins](https://jrs-s.net/2017/07/01/slow-ssh-logins/)
+- [VSCode Python settings reference](https://code.visualstudio.com/docs/python/settings-reference)
+- [SOAR App authoring API](https://docs.splunk.com/Documentation/Phantom/4.10.7/DevelopApps/AppDevAPIRef)
+- [Vault usage example - splunk-soar-connectors/endace](https://github.com/splunk-soar-connectors/endace)
