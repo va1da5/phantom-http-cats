@@ -2,14 +2,15 @@
 
 *Work in progress..*
 
+***Disclaimer**: The reversing of the product could be recognized as a breach of a license agreement and you should always consult with the vendor before decompiling binary files back into source code. Under no circumstances will I be held responsible or liable in any way for any claims, damages, losses, expenses, costs or liabilities whatsoever (including, without limitation, any direct or indirect damages for loss of profits, business interruption or loss of information) resulting or arising directly or indirectly from your use of or inability to use materials provided in this repository. You are responsible for your own
+actions.*
+
 HTTP Cats in an Splunk Phantom application meant for a demo integration purpose. The application itself translates an HTTP response code into a visual representation using cat pictures.
 
 ## Preparation
 
 All Python code within the Splunk Phantom instances are compiled to binary files. Therefore, an IDE cannot provide code completion and proper syntax highlighting. However, the following steps can be used to prepare the code for the IDE:
 
-***Disclaimer**: The reversing of the product could be recognized as a breach of a license agreement and you should always consult with the vendor before decompiling binary files back into source code. Under no circumstances will I be held responsible or liable in any way for any claims, damages, losses, expenses, costs or liabilities whatsoever (including, without limitation, any direct or indirect damages for loss of profits, business interruption or loss of information) resulting or arising directly or indirectly from your use of or inability to use materials provided in this repository. You are responsible for your own
-actions.*
 
 ```bash
 pip install uncompyle6
