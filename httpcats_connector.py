@@ -8,6 +8,9 @@
 from __future__ import print_function, unicode_literals
 
 import json
+import os
+import shutil
+import tempfile
 from typing import Any, Mapping, Tuple
 
 # Phantom App imports
@@ -17,6 +20,7 @@ import phantom.app as phantom
 # from httpcats_consts import *
 import requests
 from bs4 import BeautifulSoup
+from phantom import vault as Vault
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
@@ -212,53 +216,172 @@ class HttpCatsConnector(BaseConnector):
         self.save_progress("Test Connectivity Passed")
         return action_result.set_status(phantom.APP_SUCCESS)
 
-        # For now return Error with a message, in case of success we don't set the message, but use the summary
-        return action_result.set_status(phantom.APP_ERROR, "Action not yet implemented")
+    def _move_file_to_vault(
+        self,
+        container_id: str,
+        file_size: int,
+        type_str: str,
+        local_file_path: str,
+        action_result: ActionResult,
+    ) -> Tuple[bool, Mapping[str, Any]]:
+        """Moves a local file to vault.
+        Args:
+            container_id (str): ID of the container in which we need to add vault file
+            file_size (int): size of file
+            type_str (str): file type
+            local_file_path (str): path where file is stored
+            action_result (ActionResult): object of ActionResult class
+        Return:
+             Tuple (RetVal):
+                * bool: status success/failure
+                * dict or None: vault details, if successful
+        """
+
+        self.send_progress(phantom.APP_PROG_ADDING_TO_VAULT)
+
+        vault_details = {
+            phantom.APP_JSON_SIZE: file_size,
+            phantom.APP_JSON_TYPE: type_str,
+            phantom.APP_JSON_CONTAINS: [type_str],
+            phantom.APP_JSON_ACTION_NAME: self.get_action_name(),
+            phantom.APP_JSON_APP_RUN_ID: self.get_app_run_id(),
+        }
+
+        file_name = os.path.basename(local_file_path)
+
+        # Adding file to vault
+        try:
+            success, message, vault_id = Vault.vault_add(
+                container_id, local_file_path, file_name
+            )
+        except Exception as e:
+            err_msg = self._get_error_message_from_exception(e)
+            return RetVal(
+                action_result.set_status(
+                    phantom.APP_ERROR,
+                    "Unable to get Vault item details from Phantom. Details: {0}".format(
+                        err_msg
+                    ),
+                ),
+                None,
+            )
+
+        # Updating report data with vault details
+        if success:
+            success, message, info = Vault.vault_info(
+                vault_id, file_name, container_id, trace=True
+            )
+            vault_details[phantom.APP_JSON_VAULT_ID] = vault_id
+            vault_details["filename"] = file_name
+            vault_details["file_id"] = info[0]["id"]
+            if success:
+                self.send_progress(
+                    "Success adding file to Vault. Vault ID: {}".format(vault_id)
+                )
+            return RetVal(phantom.APP_SUCCESS, vault_details)
+
+        # Error while adding file to vault
+        self.debug_print("ERROR: Adding file to vault:", message)
+        action_result.append_to_message(". {}".format(message))
+
+        # set the action_result status to error, the handler function
+        # will most probably return as is
+        return RetVal(phantom.APP_ERROR, None)
 
     def _handle_get_status(self, param: Mapping[str, Any]):
         # Implement the handler here
         # use self.save_progress(...) to send progress messages back to the platform
-        self.save_progress(
-            "In action handler for: {0}".format(self.get_action_identifier())
-        )
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
 
         # Add an action result object to self (BaseConnector) to represent the action for this param
         action_result = self.add_action_result(ActionResult(dict(param)))
+        summary_data = action_result.update_summary(
+            {"http_status_code": param["http_status_code"]}
+        )
 
         # Access action parameters passed in the 'param' dictionary
 
         # Required values can be accessed directly
         http_status_code = param["http_status_code"]
 
-        # Optional values should use the .get() function
-        # optional_parameter = param.get('optional_parameter', 'default_value')
-
-        # make rest call
         ret_val, response = self._make_rest_call(
             f"/{http_status_code}", action_result, params=None, headers=None
         )
 
         if phantom.is_fail(ret_val):
-            # the call to the 3rd party device or service failed, action result should contain all the error details
-            # for now the return is commented out, but after implementation, return from here
             return action_result.get_status()
-            pass
 
-        # Now post process the data,  uncomment code as you deem fit
+        filename = f"{http_status_code}.jpeg"
 
-        # Add the response into the data section
-        # action_result.add_data(response)
+        self.send_progress("Saving file to disk")
 
-        # Add a dictionary that is made up of the most important values from data into the summary
-        # summary = action_result.update_summary({})
-        # summary['num_data'] = len(action_result['data'])
+        temp_dir = tempfile.mkdtemp()
+        try:
+            file_path = os.path.join(temp_dir, filename)
+            with open(file_path, "wb") as file_obj:
+                file_obj.write(response)
+        except Exception as e:
+            self.debug_print("Error creating file")
+            shutil.rmtree(temp_dir)
+            err_msg = self._get_error_message_from_exception(e)
+            return action_result.set_status(
+                phantom.APP_ERROR, f"Error creating file. Error Details: {err_msg}"
+            )
 
-        # Return success, no need to set the message, only the status
-        # BaseConnector will create a textual message based off of the summary dictionary
-        # return action_result.set_status(phantom.APP_SUCCESS)
+        container_id = self.get_container_id()
 
-        # For now return Error with a message, in case of success we don't set the message, but use the summary
-        return action_result.set_status(phantom.APP_ERROR, "Action not yet implemented")
+        try:
+            vault_list = Vault.vault_info(container_id=container_id)
+        except Exception as exc:
+            err_msg = self._get_error_message_from_exception(exc)
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                f"Unable to get Vault item details from Phantom. Details: {err_msg}",
+            )
+
+        vault_details = {}
+        try:
+            # Iterate through each vault item in the container and compare name and size of file
+            for vault in vault_list[2]:
+                if vault.get("name") == filename and vault.get(
+                    "size"
+                ) == os.path.getsize(file_path):
+                    self.send_progress("HTTP Cat already present in Vault")
+                    vault_details = {
+                        phantom.APP_JSON_SIZE: vault.get("size"),
+                        phantom.APP_JSON_VAULT_ID: vault.get(phantom.APP_JSON_VAULT_ID),
+                        "filename": filename,
+                    }
+        except Exception as exc:
+            err_msg = self._get_error_message_from_exception(exc)
+            return action_result.set_status(
+                phantom.APP_ERROR, f"Error details: {err_msg}"
+            )
+
+        if not vault_details:
+            vault_ret_val, vault_details = self._move_file_to_vault(
+                container_id,
+                os.path.getsize(file_path),
+                "jpeg",
+                file_path,
+                action_result,
+            )
+            # Check if something went wrong while moving file to vault
+            if phantom.is_fail(vault_ret_val):
+                return action_result.set_status(
+                    phantom.APP_ERROR, "Could not move file to vault"
+                )
+
+        shutil.rmtree(temp_dir)
+
+        summary_data[phantom.APP_JSON_VAULT_ID] = vault_details[
+            phantom.APP_JSON_VAULT_ID
+        ]
+        summary_data["file_id"] = vault_details["file_id"]
+
+        message = f"HTTP Cat added to Vault: {vault_details[phantom.APP_JSON_VAULT_ID]}"
+
+        return action_result.set_status(phantom.APP_SUCCESS, message)
 
     def handle_action(self, param: Mapping[str, Any]):
         ret_val = phantom.APP_SUCCESS

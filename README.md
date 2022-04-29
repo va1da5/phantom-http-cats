@@ -1,4 +1,4 @@
-# HTTP Cats Phantom Application
+# HTTP Cats Splunk SOAR (Phantom) Application
 
 *Work in progress..*
 
@@ -40,7 +40,8 @@ make prepare
 # install application in Splunk SOAR
 make install
 
-#...
+# access application execution failure logs
+make logs
 ```
 
 
@@ -69,5 +70,5 @@ UseDNS no
 - [Tutorial: Use the Splunk SOAR (Cloud) app wizard to develop an app framework](https://docs.splunk.com/Documentation/SOAR/current/DevelopApps/Tutorial)
 - [A comprehensive guide to fixing slow SSH logins](https://jrs-s.net/2017/07/01/slow-ssh-logins/)
 - [VSCode Python settings reference](https://code.visualstudio.com/docs/python/settings-reference)
-- [SOAR App authoring API](https://docs.splunk.com/Documentation/Phantom/4.10.7/DevelopApps/AppDevAPIRef)
+- [SOAR Connector module development](https://docs.splunk.com/Documentation/Phantom/4.10.7/DevelopApps/Connector)
 - [Vault usage example - splunk-soar-connectors/endace](https://github.com/splunk-soar-connectors/endace)

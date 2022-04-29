@@ -15,6 +15,7 @@ help:
 	@echo "prepare			- decompile Phantom packages for IDE code completion (in Phantom server)"
 	@echo "upload			- upload application to Phantom server from local workstation"
 	@echo "install			- install application to SOAR local instace"
+	@echo "logs			- shows app execution failure logs"
 
 
 /opt/phantom/usr/python36/lib/python3.6/site-packages/uncompyle6/__init__.py:
@@ -46,3 +47,8 @@ install:
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR) ./.venv ./.mypy_cache *.pyc
+
+
+.PHONY: logs
+logs:
+	@tail -n 200 /opt/phantom/var/log/phantom/spawn.log
